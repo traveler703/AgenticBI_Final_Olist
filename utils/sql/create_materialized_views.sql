@@ -15,7 +15,7 @@ SELECT
 FROM fact_order_items
 GROUP BY `year_month`;
 
-CREATE INDEX idx_mv_monthly_sales_month ON mv_monthly_sales(`year_month`);
+CREATE INDEX idx_mv_monthly_sales_month ON mv_monthly_sales(`year_month`(7));
 
 DROP VIEW IF EXISTS mv_state_sales;
 DROP TABLE IF EXISTS mv_state_sales;
@@ -29,7 +29,7 @@ SELECT
 FROM fact_order_items
 GROUP BY `year_month`, customer_state;
 
-CREATE INDEX idx_mv_state_sales_month_state ON mv_state_sales(`year_month`, customer_state);
+CREATE INDEX idx_mv_state_sales_month_state ON mv_state_sales(`year_month`(7), customer_state(2));
 
 DROP VIEW IF EXISTS mv_category_sales;
 DROP TABLE IF EXISTS mv_category_sales;
@@ -43,7 +43,7 @@ SELECT
 FROM fact_order_items
 GROUP BY `year_month`, product_category_english;
 
-CREATE INDEX idx_mv_category_sales_month_cat ON mv_category_sales(`year_month`, product_category_english);
+CREATE INDEX idx_mv_category_sales_month_cat ON mv_category_sales(`year_month`(7), product_category_english(128));
 
 DROP VIEW IF EXISTS mv_delivery_perf;
 DROP TABLE IF EXISTS mv_delivery_perf;
@@ -59,7 +59,7 @@ FROM fact_order_items
 WHERE shipping_duration_days IS NOT NULL
 GROUP BY `year_month`, customer_state;
 
-CREATE INDEX idx_mv_delivery_perf_month_state ON mv_delivery_perf(`year_month`, customer_state);
+CREATE INDEX idx_mv_delivery_perf_month_state ON mv_delivery_perf(`year_month`(7), customer_state(2));
 
 DROP VIEW IF EXISTS mv_payment_dist;
 DROP TABLE IF EXISTS mv_payment_dist;
@@ -79,7 +79,7 @@ JOIN orders o ON op.order_id = o.order_id
 WHERE o.order_purchase_timestamp IS NOT NULL
 GROUP BY `year_month`, op.payment_type;
 
-CREATE INDEX idx_mv_payment_dist_month_type ON mv_payment_dist(`year_month`, payment_type);
+CREATE INDEX idx_mv_payment_dist_month_type ON mv_payment_dist(`year_month`(7), payment_type(32));
 
 DROP VIEW IF EXISTS mv_review_quality;
 DROP TABLE IF EXISTS mv_review_quality;
@@ -95,8 +95,8 @@ FROM fact_order_items f
 JOIN order_reviews r ON f.order_id = r.order_id
 GROUP BY f.`year_month`, f.customer_state, f.product_category_english;
 
-CREATE INDEX idx_mv_review_quality_month_state ON mv_review_quality(`year_month`, customer_state);
-CREATE INDEX idx_mv_review_quality_category ON mv_review_quality(product_category_english);
+CREATE INDEX idx_mv_review_quality_month_state ON mv_review_quality(`year_month`(7), customer_state(2));
+CREATE INDEX idx_mv_review_quality_category ON mv_review_quality(product_category_english(128));
 
 DROP VIEW IF EXISTS mv_seller_review_risk;
 DROP TABLE IF EXISTS mv_seller_review_risk;

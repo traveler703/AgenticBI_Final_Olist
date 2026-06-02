@@ -12,7 +12,7 @@ def forecast_next_6_periods() -> pd.DataFrame:
     if df.empty or len(df) < 6:
         return pd.DataFrame(columns=["year_month", "yhat", "yhat_lower", "yhat_upper"])
 
-    ts = pd.to_numeric(df["total_gmv"], errors="coerce").fillna(method="ffill")
+    ts = pd.to_numeric(df["total_gmv"], errors="coerce").ffill()
     model = ExponentialSmoothing(ts, trend="add", seasonal=None)
     fitted = model.fit(optimized=True)
     pred = fitted.forecast(6)

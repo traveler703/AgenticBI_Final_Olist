@@ -11,6 +11,7 @@ build/
 
 # 数据（体积大，不提交）
 data/raw/*.csv
+data/raw/*.zip
 data/processed/
 
 # 输出

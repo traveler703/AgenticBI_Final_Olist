@@ -1,7 +1,6 @@
 [client]
 toolbarMode = "minimal"
 showSidebarNavigation = false
-initialSidebarState = "expanded"
 
 [browser]
 gatherUsageStats = false
