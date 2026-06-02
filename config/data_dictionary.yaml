@@ -1,0 +1,65 @@
+# 数据字典（数据分析 Agent 引用）
+# 路径：config/data_dictionary.yaml
+
+raw_data_path: "data/raw/"
+
+base_tables:
+  orders:
+    pk: order_id
+    joins: [customers via customer_id]
+  order_items:
+    pk: [order_id, order_item_id]
+    joins: [orders, products, sellers]
+  customers:
+    pk: customer_id
+  products:
+    pk: product_id
+  sellers:
+    pk: seller_id
+  order_payments:
+    pk: [order_id, payment_sequential]
+  order_reviews:
+    pk: order_id
+  geolocation:
+    note: 州级分析优先用 mv_state_sales
+  product_category_name_translation:
+    pk: product_category_name
+
+analytical_table:
+  fact_order_items:
+    description: 订单明细宽表，回退查询时使用
+    key_fields: [year_month, customer_state, product_category_english, item_gmv, is_on_time]
+
+materialized_views:
+  mv_monthly_sales:
+    grain: year_month
+    use_when: ["月度销售", "GMV趋势", "环比增长", "销售额预测输入"]
+    fields: [year_month, total_gmv, total_orders, avg_basket, total_freight]
+  mv_state_sales:
+    grain: year_month + customer_state
+    use_when: ["各州销售", "区域对比", "地理分布"]
+    fields: [year_month, customer_state, total_gmv, total_orders, unique_customers]
+  mv_category_sales:
+    grain: year_month + product_category_english
+    use_when: ["品类表现", "Top品类"]
+    fields: [year_month, product_category_english, total_gmv, total_orders, avg_price]
+  mv_delivery_perf:
+    grain: year_month + customer_state
+    use_when: ["配送延迟", "准时率", "物流诊断"]
+    fields: [year_month, customer_state, avg_delivery_days, on_time_rate, delayed_orders, total_orders]
+  mv_payment_dist:
+    grain: year_month + payment_type
+    use_when: ["支付方式", "分期", "支付偏好"]
+    fields: [year_month, payment_type, total_transactions, avg_installments, total_value]
+  mv_review_quality:
+    grain: year_month + customer_state + product_category_english
+    use_when: ["评论质量", "评分", "差评率", "品类满意度"]
+    fields: [year_month, customer_state, product_category_english, avg_review_score, negative_review_rate, review_count]
+  mv_seller_review_risk:
+    grain: seller_id
+    use_when: ["高差评卖家", "What-if下架模拟", "卖家风险"]
+    fields: [seller_id, total_orders, total_gmv, avg_review_score, negative_orders, delay_rate]
+
+query_policy:
+  priority: 先匹配 materialized_views，无法覆盖再查 fact_order_items 或 base_tables
+  allow_only: SELECT

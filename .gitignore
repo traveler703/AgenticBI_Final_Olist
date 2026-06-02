@@ -1,0 +1,51 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# 数据（体积大，不提交）
+data/raw/*.csv
+data/processed/
+
+# 输出
+outputs/charts/*
+!outputs/charts/.gitkeep
+outputs/reports/*
+!outputs/reports/.gitkeep
+outputs/reports/*
+!outputs/reports/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Coverage / caches
+.coverage
+htmlcov/
+.ruff_cache/
+.pyre/
+
+# Env variants
+.env.*
+!.env.example
+
+# Temp
+*.tmp
+*.bak
