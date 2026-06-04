@@ -5,6 +5,7 @@ import sys
 import time
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 from sqlalchemy import create_engine, text
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -72,6 +73,18 @@ def main() -> None:
         ),
         encoding="utf-8",
     )
+    labels = ["Base JOIN aggregation", "Pre-aggregated query"]
+    elapsed_ms = [slow * 1000, fast * 1000]
+    fig, ax = plt.subplots(figsize=(7, 4))
+    bars = ax.bar(labels, elapsed_ms, color=["#c95050", "#2b8a6e"])
+    ax.set_yscale("log")
+    ax.set_ylabel("Query time (ms, log scale)")
+    ax.set_title(f"Pre-Aggregation Performance: {speedup:.1f}x speedup")
+    for bar, value in zip(bars, elapsed_ms):
+        ax.text(bar.get_x() + bar.get_width() / 2, value, f"{value:.3f} ms", ha="center", va="bottom")
+    fig.tight_layout()
+    fig.savefig(REPORT_DIR / "performance_comparison.png", dpi=160)
+    plt.close(fig)
     print(f"报告材料已写入: {REPORT_DIR / 'performance_comparison.md'}")
 
 

@@ -12,9 +12,9 @@
 
 ## 3. 技术选型说明
 - LLM：DeepSeek
-- Agent 编排：LangGraph + MemorySaver
+- Agent 编排：LangGraph StateGraph（单轮状态隔离）
 - 查询引擎：MySQL（Docker）
-- 预测模型：Holt-Winters/ARIMA
+- 预测模型：基于完整周度序列的对数尺度阻尼 Holt 趋势
 - 可视化与前端：Streamlit + Matplotlib
 
 ## 4. 数据集描述与预处理
@@ -25,6 +25,7 @@
 
 ## 5. 物理预聚合表设计（重点）
 - `mv_monthly_sales`
+- `mv_weekly_sales`
 - `mv_state_sales`
 - `mv_category_sales`
 - `mv_delivery_perf`
@@ -42,13 +43,13 @@
 ## 7. 四层分析结果
 - 描述性分析
 - 诊断性分析
-- 预测性分析（未来 6 期）
+- 预测性分析（未来 6 周，区分单周值与 6 周合计）
 - 规范性分析（运营建议）
 
 ## 8. 可视化与交互
 - 六类图表展示截图
 - 左聊右图交互界面说明
-- 多轮上下文示例
+- 单轮复合问题上下文传递示例
 
 ## 9. 性能优化与对比（重点）
 - 对比查询：原表实时聚合 vs 物理表 `mv_monthly_sales`

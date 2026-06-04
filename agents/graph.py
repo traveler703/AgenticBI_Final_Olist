@@ -1,12 +1,12 @@
 """LangGraph StateGraph 编排。"""
 from __future__ import annotations
 
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
 from agents.coordinator import coordinator_node
 from agents.data_analyst import data_analyst_node
 from agents.decision import decision_node
+from agents.nlp_insights import nlp_insights_node
 from agents.state import AgentState
 from agents.visualizer import visualizer_node
 from agents.whatif_anomaly import whatif_anomaly_node
@@ -17,6 +17,16 @@ def _route_after_coordinator(state: AgentState) -> str:
 
 
 def _route_after_data(state: AgentState) -> str:
+    if state.get("need_nlp", False):
+        return "nlp_insights"
+    if state.get("need_visualization", True):
+        return "visualizer"
+    if state.get("need_decision", False):
+        return "decision"
+    return END
+
+
+def _route_after_nlp(state: AgentState) -> str:
     if state.get("need_visualization", True):
         return "visualizer"
     if state.get("need_decision", False):
@@ -42,6 +52,7 @@ def build_graph():
     graph = StateGraph(AgentState)
     graph.add_node("coordinator", coordinator_node)
     graph.add_node("data_analyst", data_analyst_node)
+    graph.add_node("nlp_insights", nlp_insights_node)
     graph.add_node("visualizer", visualizer_node)
     graph.add_node("whatif_anomaly", whatif_anomaly_node)
     graph.add_node("decision", decision_node)
@@ -55,6 +66,11 @@ def build_graph():
     graph.add_conditional_edges(
         "data_analyst",
         _route_after_data,
+        {"nlp_insights": "nlp_insights", "visualizer": "visualizer", "decision": "decision", END: END},
+    )
+    graph.add_conditional_edges(
+        "nlp_insights",
+        _route_after_nlp,
         {"visualizer": "visualizer", "decision": "decision", END: END},
     )
     graph.add_conditional_edges(
@@ -69,4 +85,4 @@ def build_graph():
     )
     graph.add_edge("decision", END)
 
-    return graph.compile(checkpointer=MemorySaver())
+    return graph.compile()

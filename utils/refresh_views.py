@@ -26,8 +26,9 @@ def main() -> None:
         conn.commit()
     print(
         "物理预聚合表已创建/刷新："
-        "mv_monthly_sales, mv_state_sales, mv_category_sales, mv_delivery_perf, "
-        "mv_payment_dist, mv_review_quality, mv_seller_review_risk"
+        "mv_monthly_sales, mv_weekly_sales, mv_state_sales, mv_category_sales, mv_delivery_perf, "
+        "mv_payment_dist, mv_payment_installment_matrix, mv_weight_freight_bucket, "
+        "mv_state_geo_sales, mv_review_quality, mv_seller_review_risk"
     )
 
 

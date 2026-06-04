@@ -15,7 +15,6 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from agents.graph import build_graph
-from agents.visualizer import CHART_SPECS, ensure_default_charts
 from config.settings import OUTPUT_CHARTS_DIR, RAW_DATA_DIR, check_raw_data_files
 
 
@@ -56,23 +55,6 @@ def normalize_chart_paths(paths: list[str] | None) -> list[str]:
                 resolved_list.append(key)
                 break
     return resolved_list
-
-
-def list_existing_chart_paths() -> list[str]:
-    """仅读取已生成的图表文件，不触发数据库查询或重绘。"""
-    if not OUTPUT_CHARTS_DIR.is_dir():
-        return []
-    paths: list[str] = []
-    for _name, _title, filename, _builder in CHART_SPECS:
-        path = OUTPUT_CHARTS_DIR / filename
-        if path.is_file() and path.stat().st_size > 0:
-            paths.append(str(path.resolve()))
-    return paths
-
-
-@st.cache_data(show_spinner="正在生成默认图表…", ttl=600)
-def build_default_charts_cached() -> list[str]:
-    return normalize_chart_paths(ensure_default_charts())
 
 
 def inject_sidebar_toggle_scripts() -> None:
@@ -1065,9 +1047,10 @@ def inject_style() -> None:
 
 
 def run_agent(query: str, thread_id: str) -> dict:
+    """运行单轮分析；thread_id 仅用于兼容界面会话记录，不传入 Agent 状态。"""
+    _ = thread_id
     result = get_compiled_graph().invoke(
         {"user_query": query, "messages": [("user", query)]},
-        config={"configurable": {"thread_id": thread_id}},
     )
     if result.get("chart_paths"):
         result = dict(result)
@@ -1186,7 +1169,7 @@ def render_sidebar(ok: bool, missing: list[str]) -> None:
         unsafe_allow_html=True,
     )
 
-    if st.button("＋ 新对话", key="sidebar_new_chat", use_container_width=True):
+    if st.button("＋ 新对话", key="sidebar_new_chat", width="stretch"):
         create_new_thread()
         st.rerun()
 
@@ -1203,7 +1186,7 @@ def render_sidebar(ok: bool, missing: list[str]) -> None:
             if st.button(
                 title,
                 key=f"thread_pick_{tid}",
-                use_container_width=True,
+                width="stretch",
                 type="primary" if is_active else "secondary",
             ) and not is_active:
                 st.session_state.current_thread_id = tid
@@ -1216,7 +1199,7 @@ def render_sidebar(ok: bool, missing: list[str]) -> None:
     st.markdown('<div class="side-section-label">示例问题</div>', unsafe_allow_html=True)
     st.markdown('<div class="side-example-list">', unsafe_allow_html=True)
     for q in EXAMPLE_QUESTIONS:
-        if st.button(q, key=f"example_{q}", use_container_width=True):
+        if st.button(q, key=f"example_{q}", width="stretch"):
             thread["query_text"] = q
             st.session_state[query_key(current_id)] = q
             st.rerun()
@@ -1232,7 +1215,7 @@ def render_sidebar(ok: bool, missing: list[str]) -> None:
             for f in missing:
                 st.caption(f"缺少: {f}")
 
-    if st.button("删除当前对话", key="sidebar_delete_chat", use_container_width=True):
+    if st.button("删除当前对话", key="sidebar_delete_chat", width="stretch"):
         delete_current_thread()
         st.rerun()
     st.markdown("</div></div></div></div>", unsafe_allow_html=True)
@@ -1281,8 +1264,8 @@ st.markdown(
       <div class="badge-row">
         <span class="badge">多 Agent 协作</span>
         <span class="badge">MySQL 预聚合视图</span>
-        <span class="badge">6 类可视化</span>
-        <span class="badge">连续问答记忆</span>
+        <span class="badge">9 类可视化</span>
+        <span class="badge">单轮问题隔离</span>
       </div>
     </div>
     """,
@@ -1320,9 +1303,9 @@ with col_chat:
     )
     action_col1, action_col2 = st.columns([0.68, 0.32])
     with action_col1:
-        ask_clicked = st.button("开始分析", type="primary", use_container_width=True, key="btn_start_analysis")
+        ask_clicked = st.button("开始分析", type="primary", width="stretch", key="btn_start_analysis")
     with action_col2:
-        st.button("清空输入", use_container_width=True, on_click=clear_query_text, args=(q_key, thread_id))
+        st.button("清空输入", width="stretch", on_click=clear_query_text, args=(q_key, thread_id))
     if ask_clicked:
         submit_query(st.session_state[q_key], thread_id, ok)
         thread["query_text"] = ""
@@ -1362,7 +1345,7 @@ with col_viz:
         with st.expander("数据预览", expanded=False):
             for title, df in dfs:
                 st.markdown(f"**{title}**")
-                st.dataframe(df.head(50), use_container_width=True)
+                st.dataframe(df.head(50), width="stretch")
 
     if last.get("whatif_insights") or last.get("anomaly_insights"):
         st.markdown('<div class="section-title">加分洞察</div>', unsafe_allow_html=True)
@@ -1379,17 +1362,18 @@ with col_viz:
                 st.caption(last["query_strategy"])
 
     chart_paths = normalize_chart_paths(last.get("chart_paths", []))
-    if not chart_paths and ok:
-        chart_paths = list_existing_chart_paths()
 
     if chart_paths:
         with st.expander("图表结果", expanded=False):
             chart_cols = st.columns(2, gap="large")
-            for idx, p in enumerate(chart_paths[: len(CHART_SPECS)]):
-                title = CHART_SPECS[idx][1] if idx < len(CHART_SPECS) else Path(p).stem
+            chart_titles = last.get("chart_titles") or []
+            for idx, p in enumerate(chart_paths):
+                title = chart_titles[idx] if idx < len(chart_titles) else Path(p).stem
                 with chart_cols[idx % 2]:
                     st.markdown(f"**{title}**")
                     st.image(p, width="stretch")
+            if last.get("visualization_strategy"):
+                st.caption(f"图表选择策略：{last['visualization_strategy']}")
     elif last:
         st.caption("本轮未生成可用图表文件。")
     else:
@@ -1398,22 +1382,3 @@ with col_viz:
             "<p>提交业务问题后，这里会显示关键指标、图表、SQL 与策略建议。</p></div>",
             unsafe_allow_html=True,
         )
-        if ok:
-            gen_col, _ = st.columns([0.45, 0.55])
-            with gen_col:
-                if st.button("生成默认图表", key="build_default_charts", use_container_width=True):
-                    try:
-                        built = build_default_charts_cached()
-                        st.session_state["preview_chart_paths"] = built
-                        st.rerun()
-                    except Exception as exc:  # noqa: BLE001
-                        st.error(f"图表生成失败：{exc}")
-            preview = normalize_chart_paths(st.session_state.get("preview_chart_paths", []))
-            if preview:
-                st.markdown('<div class="section-title">图表预览</div>', unsafe_allow_html=True)
-                preview_cols = st.columns(2, gap="large")
-                for idx, p in enumerate(preview[: len(CHART_SPECS)]):
-                    title = CHART_SPECS[idx][1]
-                    with preview_cols[idx % 2]:
-                        st.markdown(f"**{title}**")
-                        st.image(p, width="stretch")

@@ -9,6 +9,7 @@ def test_mv_objects_are_physical_tables_not_plain_views() -> None:
     assert "CREATE VIEW mv_monthly_sales" not in SQL
     assert "CREATE TABLE mv_monthly_sales AS" in SQL
     assert "CREATE TABLE mv_state_sales AS" in SQL
+    assert "CREATE TABLE mv_weekly_sales AS" in SQL
     assert "CREATE TABLE mv_delivery_perf AS" in SQL
     assert "CREATE INDEX idx_mv_monthly_sales_month" in SQL
 
@@ -19,3 +20,8 @@ def test_review_risk_preaggregations_exist() -> None:
     assert "negative_review_rate" in SQL
     assert "negative_orders" in SQL
 
+
+def test_visualization_preaggregations_exist() -> None:
+    assert "CREATE TABLE mv_payment_installment_matrix AS" in SQL
+    assert "CREATE TABLE mv_weight_freight_bucket AS" in SQL
+    assert "CREATE TABLE mv_state_geo_sales AS" in SQL

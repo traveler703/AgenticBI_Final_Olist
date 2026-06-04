@@ -17,8 +17,14 @@ class AgentState(TypedDict, total=False):
     data_summary: str
     query_strategy: str
     chart_paths: list[str]
+    chart_titles: list[str]
+    visualization_strategy: str
     forecast_result: dict[str, Any]
+    forecast_weeks: int
     nlp_insights: str
+    nlp_result: dict[str, Any]
+    decision_advice: str
+    advice_source: str
     whatif_insights: str
     anomaly_insights: str
     final_answer: str
@@ -28,6 +34,7 @@ class AgentState(TypedDict, total=False):
     data_row_count: int
     need_visualization: bool
     need_forecast: bool
+    need_nlp: bool
     need_decision: bool
     need_whatif: bool
     need_anomaly: bool

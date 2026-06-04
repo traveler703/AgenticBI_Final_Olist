@@ -37,15 +37,28 @@ def ensure_database() -> None:
         f"mysql+pymysql://{settings.mysql_user}:{settings.mysql_password}"
         f"@{settings.mysql_host}:{settings.mysql_port}/"
     )
-    server_engine = create_engine(server_url)
-    with server_engine.connect() as conn:
-        conn.execute(
-            text(
-                f"CREATE DATABASE IF NOT EXISTS `{settings.mysql_database}` "
-                "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+    server_engine = create_engine(server_url, pool_pre_ping=True)
+    try:
+        with server_engine.connect() as conn:
+            conn.execute(
+                text(
+                    f"CREATE DATABASE IF NOT EXISTS `{settings.mysql_database}` "
+                    "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+                )
             )
+            conn.commit()
+    except Exception as exc:
+        host, port = settings.mysql_host, settings.mysql_port
+        print(
+            f"\n无法连接 MySQL：{host}:{port}\n"
+            f"  原因：{exc}\n\n"
+            "常见处理：\n"
+            "  1. 确认 MySQL 已启动（本机可执行：mysqladmin ping -h127.0.0.1）\n"
+            "  2. 核对 .env 中 MYSQL_PORT 是否与实例一致（本机默认多为 3306）\n"
+            "  3. 若用 Docker：在项目根目录执行 docker compose up -d\n"
+            "  4. localhost 与 127.0.0.1 等价；连不上通常是端口或服务未启动，而非主机名\n"
         )
-        conn.commit()
+        raise SystemExit(1) from exc
 
 
 def import_csv(engine, table: str, csv_name: str, chunksize: int | None = None) -> None:

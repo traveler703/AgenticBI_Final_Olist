@@ -33,8 +33,12 @@ analytical_table:
 materialized_views:
   mv_monthly_sales:
     grain: year_month
-    use_when: ["月度销售", "GMV趋势", "环比增长", "销售额预测输入"]
+    use_when: ["月度销售", "GMV趋势", "环比增长"]
     fields: [year_month, total_gmv, total_orders, avg_basket, total_freight]
+  mv_weekly_sales:
+    grain: week_start
+    use_when: ["未来6周销售预测", "周度GMV趋势", "短期销售预测"]
+    fields: [week_start, total_gmv, total_orders, avg_basket, total_freight]
   mv_state_sales:
     grain: year_month + customer_state
     use_when: ["各州销售", "区域对比", "地理分布"]
@@ -51,6 +55,18 @@ materialized_views:
     grain: year_month + payment_type
     use_when: ["支付方式", "分期", "支付偏好"]
     fields: [year_month, payment_type, total_transactions, avg_installments, total_value]
+  mv_payment_installment_matrix:
+    grain: payment_type + payment_installments
+    use_when: ["支付方式与分期数交叉分析", "支付分期热力图"]
+    fields: [payment_type, payment_installments, total_transactions, total_value]
+  mv_weight_freight_bucket:
+    grain: weight_bucket
+    use_when: ["商品重量、尺寸与运费关系", "重量分桶配送分析"]
+    fields: [weight_bucket, avg_weight_g, avg_length_cm, avg_height_cm, avg_width_cm, avg_volume_cm3, avg_freight, avg_delivery_days, order_cnt]
+  mv_state_geo_sales:
+    grain: customer_state
+    use_when: ["州级地理分布", "地理气泡图"]
+    fields: [customer_state, total_gmv, total_orders, latitude, longitude]
   mv_review_quality:
     grain: year_month + customer_state + product_category_english
     use_when: ["评论质量", "评分", "差评率", "品类满意度"]
