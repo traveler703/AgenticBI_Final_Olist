@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23D97757'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white'%3E%E2%97%86%3C/text%3E%3C/svg%3E" />
+  <title>Agentic BI · Olist</title>
+</head>
+
+<body>
+  <div id="app">
+    <!-- 左侧：会话历史 -->
+    <aside class="sidebar">
+      <div class="side-head">
+        <div class="brand"><span class="logo">◆</span><span>Agentic BI</span></div>
+      </div>
+      <button class="new-chat" id="newChat">＋ 新对话</button>
+      <div class="conv-list" id="convList"></div>
+      <div class="side-foot">
+        <button class="foot-btn" id="refreshLogBtn">预聚合刷新日志</button>
+        <div class="stat-chip" id="routeStat">⚡ 视图命中 —</div>
+      </div>
+    </aside>
+
+    <!-- 右侧主区 -->
+    <main class="main">
+      <header class="topbar">
+        <div class="title-wrap">
+          <span class="conv-title" id="convTitle" title="点击修改标题">新对话</span>
+        </div>
+        <div class="top-right">
+          <div class="model-picker">
+            <select id="providerSelect"></select>
+            <select id="modelSelect"></select>
+          </div>
+          <button class="icon-btn" id="toggleArtifacts" title="显示/隐藏图表面板">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <section class="conversation" id="conversation">
+          <div class="messages" id="messages">
+            <div class="welcome" id="welcome">
+              <div class="welcome-logo">◆</div>
+              <h1>Olist 电商运营分析</h1>
+              <p>多智能体 · 自主推理 · 预聚合加速。问我销售、配送、评分、预测、What-if…</p>
+            </div>
+          </div>
+          <div class="composer-wrap">
+            <div class="suggestions" id="suggestions"></div>
+            <div class="composer">
+              <textarea id="input" rows="1" placeholder="给 Olist BI 发消息…"></textarea>
+              <button id="sendBtn" class="send-btn" title="发送">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <path fill="currentColor" d="M4 12l1.4 1.4L11 7.8V20h2V7.8l5.6 5.6L20 12l-8-8-8 8z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 图表面板：上图表，下本次查询SQL/命中表/耗时 -->
+        <section class="artifacts" id="artifacts">
+          <div class="art-head">
+            <span id="artTitle">图表</span>
+            <button class="icon-btn sm" id="closeArtifacts" title="收起">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor"
+                  d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z" />
+              </svg>
+            </button>
+          </div>
+          <div class="art-body" id="artBody">
+            <div class="art-empty">对话生成图表后在此展示，点击图表可放大、下载。</div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-mask" id="modalMask">
+    <div class="modal">
+      <button class="icon-btn modal-close" id="modalClose">✕</button>
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
