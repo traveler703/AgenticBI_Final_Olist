@@ -1,0 +1,8 @@
+pandas>=2.0.0
+numpy>=1.24.0
+sqlalchemy>=2.0.0
+pymysql>=1.1.0
+python-dotenv>=1.0.0
+yoyo-migrations>=8.2.0
+matplotlib>=3.7.0
+pytest>=8.0.0
