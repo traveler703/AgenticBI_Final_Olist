@@ -22,20 +22,17 @@ const ICON = {
   zoom: '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M15 3h6v6h-2V6.4l-3.3 3.3-1.4-1.4L17.6 5H15V3zM3 15h2v2.6l3.3-3.3 1.4 1.4L6.4 19H9v2H3v-6z"/></svg>',
 };
 
-const SUGGESTIONS = [
+const ACCEPTANCE_QUESTIONS = [
   "2017 年 GMV 是多少？按月和各州排名的趋势怎样？",
-  "2017 年哪个州的销售额最高？交付准时率是多少？哪种支付方式最受欢迎？",
   "平台整体准时交付率是多少？哪些州延迟最严重？",
   "哪种支付方式最受欢迎？平均分期数是多少？",
   "产品的重量、尺寸与运费之间有什么关系？",
-  "在地图上展示各州销售额的地理分布。",
+  "Top 10 差评品类及其主要差评原因是什么？",
   "根据历史订单趋势，预测未来 6 周的销售额，并给出趋势解读。",
-  "为什么某些州的平均配送时长显著高于全国均值？",
-  "如何降低巴西东北部地区的高退货率？请给出具体的运营改进方案。",
   "基于全部分析结果，给出平台 3 个月内的三大优先改进策略。",
-  "对差评评论做情感分析与高频词，并生成词云。",
-  "如果将 Top20 高差评卖家的商品统一下架，平台整体评分预估提升多少？",
-  "扫描近期数据，是否有某州订单量骤降或差评率突升的异常？",
+  "2017年哪个州的销售额最高？交付准时率是多少？哪种支付方式最受欢迎？",
+  "为什么某些州的平均配送时长显著高于全国均值？哪些卖家的差评率最高？",
+  "如何降低巴西东北部地区的高退货率？请给出具体的运营改进方案。",
 ];
 
 const state = { convId: null, provider: "cloud", model: null, models: null, busy: false, abort: null };
@@ -156,11 +153,33 @@ function editTitle() {
 // ---------- send / SSE ----------
 function renderSuggestions() {
   const box = $("#suggestions");
-  SUGGESTIONS.forEach((s) => {
-    const chip = el("div", "chip", s); chip.title = s;
-    chip.addEventListener("click", () => { $("#input").value = s; send(); });
-    box.appendChild(chip);
+  box.innerHTML = "";
+  const label = el("label", "preset-label", "验收问题");
+  label.setAttribute("for", "presetSelect");
+  const select = el("select", "preset-select");
+  select.id = "presetSelect";
+  select.setAttribute("aria-label", "验收问题");
+  select.innerHTML = `<option value="">选择老师要求问题…</option>`;
+  ACCEPTANCE_QUESTIONS.forEach((q, i) => {
+    const option = el("option", null, `${i + 1}. ${q}`);
+    option.value = q;
+    select.appendChild(option);
   });
+  select.addEventListener("change", onPresetSelect);
+  box.appendChild(label);
+  box.appendChild(select);
+}
+
+function onPresetSelect() {
+  const select = $("#presetSelect");
+  const text = select.value;
+  if (!text || state.busy) {
+    if (state.busy) select.value = "";
+    return;
+  }
+  $("#input").value = text;
+  select.value = "";
+  send();
 }
 
 async function send() {
@@ -169,6 +188,7 @@ async function send() {
   input.value = ""; input.style.height = "auto";
   $("#messages .welcome")?.remove();
   state.busy = true; $("#sendBtn").disabled = true;
+  $("#presetSelect").disabled = true;
   addUserMessage(text);
   const asst = addAssistantShell();
   const statusEl = asst.querySelector(".status-line span:last-child");
@@ -194,7 +214,7 @@ async function send() {
   } catch (e) {
     if (e.name !== "AbortError") asst.querySelector(".body").innerHTML = `<div class="bubble" style="color:var(--red)">请求失败：${e.message}</div>`;
   } finally {
-    if (state.abort === ac) { state.abort = null; state.busy = false; $("#sendBtn").disabled = false; }
+    if (state.abort === ac) { state.abort = null; state.busy = false; $("#sendBtn").disabled = false; $("#presetSelect").disabled = false; }
     refreshRouteStat();
   }
 }
@@ -202,7 +222,7 @@ async function send() {
 // 中止进行中的请求并解锁发送（新建会话 / 切换会话时调用）
 function cancelInflight() {
   if (state.abort) { state.abort.abort(); state.abort = null; }
-  state.busy = false; $("#sendBtn").disabled = false;
+  state.busy = false; $("#sendBtn").disabled = false; $("#presetSelect").disabled = false;
 }
 
 function handleEvent(o, ctx) {
@@ -347,7 +367,11 @@ function closeModal() { $("#modalMask").classList.remove("open"); $("#modalBody"
 async function refreshRouteStat() {
   try {
     const d = await (await fetch("/api/route_stats")).json();
-    $("#routeStat").textContent = `⚡ 视图命中 ${(d.mv_hit_rate * 100 || 0).toFixed(0)}%（${d.total || 0}）`;
+    if (!d.total) {
+      $("#routeStat").textContent = d.error ? "⚡ 视图命中 统计不可用" : "⚡ 视图命中 待验证";
+      return;
+    }
+    $("#routeStat").textContent = `⚡ 视图命中 ${(d.mv_hit_rate * 100 || 0).toFixed(0)}%（${d.total}）`;
   } catch { }
 }
 function scrollBottom() { const b = $("#messages"); b.scrollTop = b.scrollHeight; }

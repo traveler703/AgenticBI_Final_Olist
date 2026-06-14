@@ -38,7 +38,20 @@ def extract_forecast_weeks(query: str, default: int = DEFAULT_FORECAST_WEEKS) ->
 
 
 def load_weekly_sales_history() -> tuple[pd.DataFrame, list[str]]:
-    df = read_df("SELECT week_start, total_gmv, total_orders FROM mv_weekly_sales ORDER BY week_start")
+    try:
+        df = read_df("SELECT week_start, total_gmv, total_orders FROM mv_weekly_sales ORDER BY week_start")
+    except Exception as exc:
+        if "mv_weekly_sales" not in str(exc).lower():
+            raise
+        df = read_df(
+            "SELECT DATE_SUB(DATE(order_purchase_timestamp), "
+            "INTERVAL WEEKDAY(order_purchase_timestamp) DAY) AS week_start, "
+            "SUM(item_gmv) AS total_gmv, "
+            "COUNT(DISTINCT order_id) AS total_orders "
+            "FROM fact_order_items "
+            "WHERE order_purchase_timestamp IS NOT NULL "
+            "GROUP BY week_start ORDER BY week_start"
+        )
     if df.empty:
         return df, []
     history = df.copy()

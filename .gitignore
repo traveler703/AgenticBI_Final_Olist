@@ -26,10 +26,23 @@ data_layer/data/raw/*.csv
 data_layer/data/raw/*.zip
 data_layer/data/processed/*
 !data_layer/data/processed/.gitkeep
+data/raw/
 
-# ===== 后端运行输出 =====
+# ===== 运行输出 / 临时文件 =====
 backend/outputs/charts/*
 !backend/outputs/charts/.gitkeep
+outputs/
+tmp/
+.uploads/
+
+# ===== 汇报与文档产物 =====
+*.pdf
+*.ppt
+*.pptx
+*.doc
+*.docx
+*.md
+!README.md
 
 # ===== IDE / OS =====
 .idea/

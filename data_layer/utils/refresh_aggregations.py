@@ -61,6 +61,12 @@ def refresh() -> None:
     print(f"=== 刷新预聚合：{len(blocks)} 个对象 ===", flush=True)
 
     with engine.connect() as conn:
+        conn.execute(text("""CREATE TABLE IF NOT EXISTS mv_refresh_log (
+            id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            mv_name VARCHAR(64), refreshed_at DATETIME,
+            source_rows BIGINT, result_rows BIGINT, elapsed_ms INT
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"""))
+        conn.commit()
         for mv_name, source_table, statements in blocks:
             source_rows = _count(conn, source_table)
             start = time.perf_counter()

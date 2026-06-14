@@ -49,8 +49,8 @@ JOIN sellers s    ON oi.seller_id = s.seller_id
 WHERE o.order_purchase_timestamp IS NOT NULL;
 CREATE INDEX idx_fact_month   ON fact_order_items(`year_month`(7));
 CREATE INDEX idx_fact_state   ON fact_order_items(customer_state(2));
-CREATE INDEX idx_fact_seller  ON fact_order_items(seller_id);
-CREATE INDEX idx_fact_order   ON fact_order_items(order_id);
+CREATE INDEX idx_fact_seller  ON fact_order_items(seller_id(32));
+CREATE INDEX idx_fact_order   ON fact_order_items(order_id(32));
 
 -- @mv: mv_monthly_sales | fact_order_items
 DROP TABLE IF EXISTS mv_monthly_sales;
@@ -191,7 +191,7 @@ SELECT f.`year_month`,
        f.product_category_english,
        AVG(r.review_score) AS avg_review_score,
        AVG(CASE WHEN r.review_score <= 2 THEN 1 ELSE 0 END) AS negative_review_rate,
-       COUNT(DISTINCT r.review_pk) AS review_count
+       COUNT(DISTINCT r.review_id) AS review_count
 FROM fact_order_items f
 JOIN order_reviews r ON f.order_id = r.order_id
 GROUP BY f.`year_month`, f.customer_state, f.product_category_english;

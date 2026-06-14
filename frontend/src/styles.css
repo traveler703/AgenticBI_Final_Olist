@@ -524,33 +524,41 @@ button {
 
 .suggestions {
   display: flex;
-  gap: 7px;
-  overflow-x: auto;
+  align-items: center;
+  gap: 8px;
   padding: 4px 0 10px;
-  scrollbar-width: none;
 }
 
-.suggestions::-webkit-scrollbar {
-  display: none;
-}
-
-.suggestions .chip {
-  white-space: nowrap;
+.preset-label {
   flex-shrink: 0;
   font-size: 12px;
+  font-weight: 650;
   color: var(--text-2);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 12px;
-  cursor: pointer;
-  transition: .15s;
 }
 
-.suggestions .chip:hover {
+.preset-select {
+  min-width: 0;
+  flex: 1;
+  height: 34px;
+  font-family: var(--font);
+  font-size: 12.5px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 0 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+.preset-select:hover,
+.preset-select:focus {
   border-color: var(--primary);
-  color: var(--primary-strong);
-  background: var(--primary-soft);
+}
+
+.preset-select:disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
 }
 
 .composer {
