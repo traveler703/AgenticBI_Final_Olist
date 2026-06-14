@@ -37,9 +37,10 @@ def score_review_text(text: str) -> tuple[float, float, list[str], list[str]]:
 
 
 def analyze_review_texts(limit: int = 3000) -> dict:
+    sample_size = min(max(int(limit), 1), 10_000)
     sql = ("SELECT review_comment_message FROM order_reviews "
            "WHERE review_comment_message IS NOT NULL AND TRIM(review_comment_message) <> '' "
-           f"LIMIT {int(limit)}")
+           f"ORDER BY RAND() LIMIT {sample_size}")
     df = read_df(sql)
     positive_terms: Counter[str] = Counter()
     negative_terms: Counter[str] = Counter()

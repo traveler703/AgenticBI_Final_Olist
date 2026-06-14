@@ -6,14 +6,15 @@ import threading
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from orchestration import supervisor
 from datastore import app_db
 from core.config import get_settings
+from datastore.olist_db import healthcheck as warehouse_healthcheck
 from datastore.olist_db import refresh_log
-from llm.client import chat, list_models
+from llm.client import chat, healthcheck as llm_healthcheck, list_models
 
 app = FastAPI(title="Agentic BI · Olist", version="2.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -153,4 +154,11 @@ def refresh_log_endpoint():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    checks = {
+        "warehouse": warehouse_healthcheck(),
+        "runtime_db": app_db.healthcheck(),
+        "llm": llm_healthcheck(),
+    }
+    healthy = all(check.get("ok") for check in checks.values())
+    payload = {"status": "healthy" if healthy else "unhealthy", "checks": checks}
+    return JSONResponse(payload, status_code=200 if healthy else 503)

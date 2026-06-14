@@ -78,7 +78,9 @@ class Settings:
 
 @lru_cache
 def get_settings() -> Settings:
-    load_dotenv(DATA_LAYER_ROOT / ".env")
+    local_env = DATA_LAYER_ROOT / ".env"
+    shared_env = DATA_LAYER_ROOT.parent / "backend" / ".env"
+    load_dotenv(local_env if local_env.exists() else shared_env)
     return Settings(
         host=os.getenv("MYSQL_HOST", "127.0.0.1"),
         port=int(os.getenv("MYSQL_PORT", "3306")),

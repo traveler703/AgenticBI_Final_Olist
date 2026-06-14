@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from functools import lru_cache
+import time
 
 from sqlalchemy import create_engine, text
 
@@ -160,3 +161,20 @@ def route_stats():
         return {"total": int(total), "mv_hit_rate": (mv / total) if total else 0.0, "by_route": by}
     except Exception as e:
         return {"total": 0, "mv_hit_rate": 0.0, "by_route": {}, "error": str(e)}
+
+
+def healthcheck() -> dict:
+    """Check that the runtime database is reachable and its core tables exist."""
+    started = time.perf_counter()
+    try:
+        with _engine().connect() as c:
+            c.execute(text("SELECT 1")).scalar()
+            for table in ("conversations", "messages", "query_route_log"):
+                c.execute(text(f"SELECT 1 FROM `{table}` LIMIT 1")).first()
+        return {"ok": True, "latency_ms": int((time.perf_counter() - started) * 1000)}
+    except Exception as exc:
+        return {
+            "ok": False,
+            "latency_ms": int((time.perf_counter() - started) * 1000),
+            "error": str(exc)[:300],
+        }

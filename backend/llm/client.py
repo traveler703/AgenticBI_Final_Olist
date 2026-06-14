@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import httpx
+import time
 from openai import OpenAI
 
 from core.config import get_settings
@@ -74,3 +75,25 @@ def list_models():
             "ollama": {"available": ok, "models": ollama or [s.ollama_model], "default": s.ollama_model},
         },
     }
+
+
+def healthcheck(provider=None, model=None) -> dict:
+    """Probe the configured LLM provider without issuing a completion."""
+    started = time.perf_counter()
+    try:
+        client, model_name = _client(provider, model, timeout=5.0)
+        client.models.list()
+        return {
+            "ok": True,
+            "provider": (provider or get_settings().llm_provider or "cloud").lower(),
+            "model": model_name,
+            "latency_ms": int((time.perf_counter() - started) * 1000),
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "provider": (provider or get_settings().llm_provider or "cloud").lower(),
+            "model": model,
+            "latency_ms": int((time.perf_counter() - started) * 1000),
+            "error": str(exc)[:300],
+        }

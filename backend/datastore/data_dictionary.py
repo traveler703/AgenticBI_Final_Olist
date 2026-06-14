@@ -35,7 +35,7 @@ MATERIALIZED_VIEWS: dict[str, dict] = {
         "grain": "year_month + customer_state",
         "dimensions": ["year_month", "customer_state"],
         "fields": ["year_month", "customer_state", "avg_delivery_days", "on_time_rate", "delayed_orders", "total_orders"],
-        "use_when": ["配送延迟", "准时率", "物流诊断"],
+        "use_when": ["订单级配送延迟", "订单级准时率", "物流诊断"],
     },
     "mv_payment_dist": {
         "grain": "year_month + payment_type",
@@ -67,7 +67,7 @@ MATERIALIZED_VIEWS: dict[str, dict] = {
         "dimensions": ["year_month", "customer_state", "product_category_english"],
         "fields": ["year_month", "customer_state", "product_category_english", "avg_review_score",
                    "negative_review_rate", "review_count"],
-        "use_when": ["评论质量", "评分", "差评率", "品类满意度", "退货风险代理"],
+        "use_when": ["订单级评论质量", "评分", "差评率", "品类满意度", "退货风险代理"],
     },
     "mv_seller_review_risk": {
         "grain": "seller_id",
@@ -100,8 +100,11 @@ METRIC_DEFINITIONS = {
     "total_gmv": "Σ(price + freight_value)，即 fact_order_items.item_gmv 之和（含运费口径，与基础表一致）",
     "avg_basket": "total_gmv / total_orders",
     "shipping_duration_days": "delivered_customer_date − purchase_timestamp（天），仅 delivered 订单有值",
-    "on_time_rate": "delivered_customer_date ≤ estimated_delivery_date 的比例",
-    "low_score / negative": "review_score ≤ 2；negative_review_rate = 低分订单 / review_count",
+    "on_time_rate": "订单级 delivered_customer_date ≤ estimated_delivery_date 的比例，每个订单只计一次",
+    "low_score / negative": (
+        "review_score ≤ 2；先聚合为订单级评分，多品类/多卖家订单按不同对象等权分摊；"
+        "review_count 为归因后的有效订单评论数"
+    ),
 }
 
 # 命名约定提醒：本项目沿用原始 Olist 列名，year_month 为保留字需反引号

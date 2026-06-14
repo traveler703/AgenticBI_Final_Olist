@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import time
 
 import pandas as pd
 from sqlalchemy import create_engine, text
 
 from core.config import get_settings
 from core.sql_guard import sanitize
+from datastore.data_dictionary import MATERIALIZED_VIEWS
 
 
 @lru_cache
@@ -37,3 +39,28 @@ def refresh_log(limit: int = 24) -> list[dict]:
         return df.to_dict(orient="records")
     except Exception:
         return []
+
+
+def healthcheck() -> dict:
+    """Check warehouse connectivity and verify every declared mv_* table is queryable."""
+    started = time.perf_counter()
+    try:
+        empty = []
+        with _engine().connect() as c:
+            c.execute(text("SELECT 1")).scalar()
+            for name in MATERIALIZED_VIEWS:
+                row = c.execute(text(f"SELECT 1 FROM `{name}` LIMIT 1")).first()
+                if row is None:
+                    empty.append(name)
+        return {
+            "ok": not empty,
+            "latency_ms": int((time.perf_counter() - started) * 1000),
+            "checked_views": len(MATERIALIZED_VIEWS),
+            "empty_views": empty,
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "latency_ms": int((time.perf_counter() - started) * 1000),
+            "error": str(exc)[:300],
+        }

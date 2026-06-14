@@ -89,6 +89,7 @@ npm run dev                        # http://localhost:5173
 | GET | `/api/models` | 可用 LLM（云/本地） |
 | GET | `/api/route_stats` | 视图命中率 / 平均耗时 |
 | GET | `/api/refresh_log` | 预聚合刷新历史 |
+| GET | `/api/health` | 检查仓库、11 张预聚合表、运行库和当前配置的 LLM；异常返回 503 |
 
 ## 5. 目录结构
 
@@ -120,7 +121,7 @@ AgenticBI_Final_Olist1/
 - 异常：`扫描最近各州订单量和差评率是否有异常。`
 - 记忆：`我上一个问题问的是什么？`
 
-完整验证问题见 `docs/appendix_validation_queries.md`，演示流程见 `docs/demo_script.md`，项目报告见 `docs/project_report.md`。
+完整验证问题见 `docs/appendix_validation_queries.md`，项目报告见 `docs/project_report.md`。
 
 ## 7. 与评分项对照
 
@@ -129,7 +130,7 @@ AgenticBI_Final_Olist1/
 - **Agentic BI 多智能体协作**：supervisor + 数据/预测/What-if/异常/诊断/评论/可视化/元 多 Agent，ReAct + Reflexion + Plan-and-Execute。
 - **分析完整度**：描述 / 诊断 / 预测 / 规范四层全覆盖。
 - **可视化与交互**：12 类图表 + LLM 决策选型 + 三栏交互界面。
-- **报告与演示**：`docs/` 提供报告、模板、演示脚本与证据目录。
+- **报告与演示**：`docs/` 提供报告、演示文稿与证据目录。
 
 ## 8. 说明
 

@@ -15,11 +15,28 @@ from datastore.schema_hint import build_schema_hint
 from llm.client import chat
 
 
-FALLBACK_SQL = """WITH bad AS (SELECT seller_id FROM mv_seller_review_risk WHERE total_orders>=20
-                    ORDER BY avg_review_score ASC, negative_orders DESC LIMIT 20)
-        SELECT (SELECT AVG(r.review_score) FROM fact_order_items f JOIN order_reviews r ON f.order_id=r.order_id) cur,
-               (SELECT AVG(r.review_score) FROM fact_order_items f JOIN order_reviews r ON f.order_id=r.order_id
-                WHERE f.seller_id NOT IN (SELECT seller_id FROM bad)) sim"""
+FALLBACK_SQL = """WITH bad AS (
+                    SELECT seller_id FROM mv_seller_review_risk WHERE total_orders>=20
+                    ORDER BY avg_review_score ASC, negative_orders DESC LIMIT 20
+                ),
+                reviewed_orders AS (
+                    SELECT order_id, AVG(review_score) review_score
+                    FROM order_reviews
+                    WHERE review_score IS NOT NULL
+                    GROUP BY order_id
+                ),
+                warehouse_orders AS (
+                    SELECT DISTINCT order_id FROM fact_order_items
+                ),
+                excluded_orders AS (
+                    SELECT DISTINCT order_id FROM fact_order_items
+                    WHERE seller_id IN (SELECT seller_id FROM bad)
+                )
+        SELECT (SELECT AVG(r.review_score)
+                FROM reviewed_orders r JOIN warehouse_orders w ON r.order_id=w.order_id) cur,
+               (SELECT AVG(r.review_score)
+                FROM reviewed_orders r JOIN warehouse_orders w ON r.order_id=w.order_id
+                WHERE r.order_id NOT IN (SELECT order_id FROM excluded_orders)) sim"""
 
 
 def simulate_whatif(hypothesis="", *, provider=None, model=None, conversation_id=None, emit=lambda e: None):

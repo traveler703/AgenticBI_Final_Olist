@@ -103,14 +103,23 @@ CREATE INDEX idx_mv_category_sales_month_cat ON mv_category_sales(`year_month`(7
 -- @mv: mv_delivery_perf | fact_order_items
 DROP TABLE IF EXISTS mv_delivery_perf;
 CREATE TABLE mv_delivery_perf AS
+WITH order_delivery AS (
+    SELECT order_id,
+           MAX(`year_month`) AS `year_month`,
+           MAX(customer_state) AS customer_state,
+           MAX(shipping_duration_days) AS shipping_duration_days,
+           MAX(is_on_time) AS is_on_time
+    FROM fact_order_items
+    WHERE shipping_duration_days IS NOT NULL
+    GROUP BY order_id
+)
 SELECT `year_month`,
        customer_state,
        AVG(shipping_duration_days) AS avg_delivery_days,
        AVG(is_on_time) AS on_time_rate,
        SUM(CASE WHEN is_on_time = 0 THEN 1 ELSE 0 END) AS delayed_orders,
-       COUNT(DISTINCT order_id) AS total_orders
-FROM fact_order_items
-WHERE shipping_duration_days IS NOT NULL
+       COUNT(*) AS total_orders
+FROM order_delivery
 GROUP BY `year_month`, customer_state;
 CREATE INDEX idx_mv_delivery_perf_month_state ON mv_delivery_perf(`year_month`(7), customer_state(2));
 
@@ -186,28 +195,93 @@ CREATE INDEX idx_mv_state_geo_sales_state ON mv_state_geo_sales(customer_state(2
 -- @mv: mv_review_quality | fact_order_items
 DROP TABLE IF EXISTS mv_review_quality;
 CREATE TABLE mv_review_quality AS
-SELECT f.`year_month`,
-       f.customer_state,
-       f.product_category_english,
-       AVG(r.review_score) AS avg_review_score,
-       AVG(CASE WHEN r.review_score <= 2 THEN 1 ELSE 0 END) AS negative_review_rate,
-       COUNT(DISTINCT r.review_id) AS review_count
-FROM fact_order_items f
-JOIN order_reviews r ON f.order_id = r.order_id
-GROUP BY f.`year_month`, f.customer_state, f.product_category_english;
+WITH order_context AS (
+    SELECT order_id,
+           MAX(`year_month`) AS `year_month`,
+           MAX(customer_state) AS customer_state
+    FROM fact_order_items
+    GROUP BY order_id
+),
+order_categories AS (
+    SELECT DISTINCT order_id, product_category_english
+    FROM fact_order_items
+),
+category_counts AS (
+    SELECT order_id, COUNT(*) AS category_count
+    FROM order_categories
+    GROUP BY order_id
+),
+order_reviews_one AS (
+    SELECT order_id, AVG(review_score) AS review_score
+    FROM order_reviews
+    WHERE review_score IS NOT NULL
+    GROUP BY order_id
+),
+attributed_reviews AS (
+    SELECT c.`year_month`,
+           c.customer_state,
+           oc.product_category_english,
+           r.review_score,
+           1.0 / cc.category_count AS attribution_weight
+    FROM order_context c
+    JOIN order_categories oc ON c.order_id = oc.order_id
+    JOIN category_counts cc ON c.order_id = cc.order_id
+    JOIN order_reviews_one r ON c.order_id = r.order_id
+)
+SELECT `year_month`,
+       customer_state,
+       product_category_english,
+       SUM(review_score * attribution_weight) / NULLIF(SUM(attribution_weight), 0) AS avg_review_score,
+       SUM(CASE WHEN review_score <= 2 THEN attribution_weight ELSE 0 END)
+           / NULLIF(SUM(attribution_weight), 0) AS negative_review_rate,
+       SUM(attribution_weight) AS review_count
+FROM attributed_reviews
+GROUP BY `year_month`, customer_state, product_category_english;
 CREATE INDEX idx_mv_review_quality_month_state ON mv_review_quality(`year_month`(7), customer_state(2));
 CREATE INDEX idx_mv_review_quality_category ON mv_review_quality(product_category_english(128));
 
 -- @mv: mv_seller_review_risk | fact_order_items
 DROP TABLE IF EXISTS mv_seller_review_risk;
 CREATE TABLE mv_seller_review_risk AS
-SELECT f.seller_id,
-       COUNT(DISTINCT f.order_id) AS total_orders,
-       SUM(f.item_gmv) AS total_gmv,
-       AVG(r.review_score) AS avg_review_score,
-       SUM(CASE WHEN r.review_score <= 2 THEN 1 ELSE 0 END) AS negative_orders,
-       AVG(CASE WHEN f.is_on_time = 0 THEN 1 ELSE 0 END) AS delay_rate
-FROM fact_order_items f
-LEFT JOIN order_reviews r ON f.order_id = r.order_id
-GROUP BY f.seller_id;
+WITH seller_orders AS (
+    SELECT order_id,
+           seller_id,
+           SUM(item_gmv) AS seller_gmv,
+           MAX(CASE WHEN shipping_duration_days IS NOT NULL THEN is_on_time END) AS is_on_time
+    FROM fact_order_items
+    GROUP BY order_id, seller_id
+),
+seller_counts AS (
+    SELECT order_id, COUNT(*) AS seller_count
+    FROM seller_orders
+    GROUP BY order_id
+),
+order_reviews_one AS (
+    SELECT order_id, AVG(review_score) AS review_score
+    FROM order_reviews
+    WHERE review_score IS NOT NULL
+    GROUP BY order_id
+)
+SELECT so.seller_id,
+       COUNT(*) AS total_orders,
+       SUM(so.seller_gmv) AS total_gmv,
+       LEAST(5.0, GREATEST(
+           1.0,
+           SUM(CAST(r.review_score AS DECIMAL(20,8)) / sc.seller_count)
+               / NULLIF(SUM(
+                   CASE WHEN r.review_score IS NOT NULL
+                        THEN CAST(1 AS DECIMAL(20,8)) / sc.seller_count
+                        ELSE 0 END
+               ), 0)
+       )) AS avg_review_score,
+       SUM(
+           CASE WHEN r.review_score <= 2
+                THEN CAST(1 AS DECIMAL(20,8)) / sc.seller_count
+                ELSE 0 END
+       ) AS negative_orders,
+       AVG(CASE WHEN so.is_on_time IS NOT NULL THEN 1 - so.is_on_time END) AS delay_rate
+FROM seller_orders so
+JOIN seller_counts sc ON so.order_id = sc.order_id
+LEFT JOIN order_reviews_one r ON so.order_id = r.order_id
+GROUP BY so.seller_id;
 CREATE INDEX idx_mv_seller_review_risk_score ON mv_seller_review_risk(avg_review_score, negative_orders);
