@@ -35,15 +35,6 @@ outputs/
 tmp/
 .uploads/
 
-# ===== 汇报与文档产物 =====
-*.pdf
-*.ppt
-*.pptx
-*.doc
-*.docx
-*.md
-!README.md
-
 # ===== IDE / OS =====
 .idea/
 .vscode/
