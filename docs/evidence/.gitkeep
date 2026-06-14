@@ -1,0 +1,8 @@
+# 报告证据截图目录（交付物，应提交）
+# 提交前按 docs/project_report.md 中引用的文件名补入真实运行截图：
+#   dashboard_preaggregation_sql.png   预聚合命中与本轮 SQL 面板
+#   performance_comparison.png         benchmark 预聚合性能对比
+#   dashboard_dynamic_payment_heatmap.png  动态选择热力图
+#   chart_state_geo_bubble.png         州级地理气泡图
+#   dashboard_nlp_decision.png         分色词云与 NLP/决策
+#   dashboard_whatif_anomaly.png       What-if 与异常检测

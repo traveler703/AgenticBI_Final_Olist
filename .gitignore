@@ -1,52 +1,59 @@
-.env
+# ===== Python =====
+__pycache__/
+*.py[cod]
 .venv/
 venv/
-__pycache__/
-*.pyc
-.pytest_cache/
-.mypy_cache/
 *.egg-info/
 dist/
 build/
-
-# 数据（体积大，不提交）
-data/raw/*.csv
-data/raw/*.zip
-data/processed/
-
-# 输出
-outputs/charts/*
-!outputs/charts/.gitkeep
-outputs/reports/*
-!outputs/reports/.gitkeep
-outputs/reports/*
-!outputs/reports/.gitkeep
-
-# IDE
-.idea/
-.vscode/
-*.log
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Streamlit secrets
-.streamlit/secrets.toml
-
-# Coverage / caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
-.ruff_cache/
-.pyre/
 
-# Env variants
+# ===== 环境变量 =====
+.env
 .env.*
 !.env.example
 
-# Temp
+# ===== Node / 前端 =====
+node_modules/
+frontend/dist/
+
+# ===== 数据（体积大、可从 Kaggle 重新下载）=====
+data_layer/data/raw/*.csv
+data_layer/data/raw/*.zip
+data_layer/data/processed/*
+!data_layer/data/processed/.gitkeep
+data/raw/
+
+# ===== 运行输出 / 临时文件 =====
+backend/outputs/charts/*
+!backend/outputs/charts/.gitkeep
+outputs/
+tmp/
+.uploads/
+
+# ===== 汇报与文档产物 =====
+*.pdf
+*.ppt
+*.pptx
+*.doc
+*.docx
+*.md
+!README.md
+
+# ===== IDE / OS =====
+.idea/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db
+
+# ===== Jupyter / 临时 =====
+.ipynb_checkpoints/
 *.tmp
 *.bak
+
+

@@ -1,0 +1,21 @@
+# Web
+fastapi
+uvicorn[standard]
+sse-starlette
+pydantic
+httpx[socks]
+
+# LLM & Agent
+langgraph
+langchain-core
+openai
+
+# Data & DB
+pandas
+numpy
+sqlalchemy
+pymysql
+python-dotenv
+
+# Forecast
+statsmodels
